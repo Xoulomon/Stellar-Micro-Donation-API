@@ -157,7 +157,7 @@ app.get('/admin/replay-stats', require('../middleware/rbac').requireAdmin(), (re
 });
 
 // Manual reconciliation trigger (admin only)
-app.post('/reconcile', require('../middleware/rbac').requireAdmin(), async (req, res) => {
+app.post('/reconcile', require('../middleware/rbac').requireAdmin(), async (req, res, next) => {
   try {
     if (reconciliationService.reconciliationInProgress) {
       return res.status(409).json({
@@ -165,13 +165,54 @@ app.post('/reconcile', require('../middleware/rbac').requireAdmin(), async (req,
         error: 'Reconciliation already in progress'
       });
     }
-    // Trigger reconciliation without waiting
-    reconciliationService.reconcile().catch(error => {
-      log.error('APP', 'Manual reconciliation failed', { error: error.message });
-    });
+    // Trigger reconciliation and wait for result
+    const result = await reconciliationService.reconcile();
     res.json({
       success: true,
-      message: 'Reconciliation started',
+      message: 'Reconciliation complete',
+      data: result,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Admin reconcile endpoint (canonical path)
+app.post('/admin/reconcile', require('../middleware/rbac').requireAdmin(), async (req, res, next) => {
+  try {
+    if (reconciliationService.reconciliationInProgress) {
+      return res.status(409).json({
+        success: false,
+        error: 'Reconciliation already in progress'
+      });
+    }
+    const result = await reconciliationService.reconcile();
+    res.json({
+      success: true,
+      message: 'Reconciliation complete',
+      data: result,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Orphaned transactions stats (admin only)
+app.get('/admin/orphaned-transactions', require('../middleware/rbac').requireAdmin(), async (req, res, next) => {
+  try {
+    const rows = await Database.query(
+      'SELECT id, senderId, receiverId, amount, memo, timestamp, stellar_tx_id FROM transactions WHERE is_orphan = 1 ORDER BY timestamp DESC',
+      []
+    );
+    res.json({
+      success: true,
+      data: {
+        count: rows.length,
+        transactions: rows,
+        lifetimeDetected: reconciliationService.getOrphanedTransactionCount(),
+      },
       timestamp: new Date().toISOString()
     });
   } catch (error) {

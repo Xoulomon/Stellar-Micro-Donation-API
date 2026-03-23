@@ -40,7 +40,9 @@ module.exports = async () => {
       amount REAL NOT NULL,
       memo TEXT,
       timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-      idempotencyKey TEXT UNIQUE
+      idempotencyKey TEXT UNIQUE,
+      stellar_tx_id TEXT UNIQUE,
+      is_orphan INTEGER NOT NULL DEFAULT 0
     )`);
     await Database.run(`CREATE TABLE IF NOT EXISTS api_keys (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

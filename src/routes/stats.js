@@ -317,4 +317,23 @@ router.get('/wallet/:walletAddress/analytics', checkPermission(PERMISSIONS.STATS
   }
 });
 
+/**
+ * GET /stats/orphaned-transactions
+ * Get count and total amount of orphaned transactions detected by reconciliation
+ */
+router.get('/orphaned-transactions', checkPermission(PERMISSIONS.STATS_READ), async (req, res, next) => {
+  try {
+    const stats = await StatsService.getOrphanStats();
+    res.json({
+      success: true,
+      data: {
+        orphaned_transactions: stats.count,
+        totalOrphanedAmount: stats.totalAmount,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = router;

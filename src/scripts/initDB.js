@@ -62,6 +62,8 @@ function createTransactionsTable(db) {
         memo TEXT,
         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
         idempotencyKey TEXT UNIQUE,
+        stellar_tx_id TEXT UNIQUE,
+        is_orphan INTEGER NOT NULL DEFAULT 0,
         FOREIGN KEY (senderId) REFERENCES users(id),
         FOREIGN KEY (receiverId) REFERENCES users(id)
       )

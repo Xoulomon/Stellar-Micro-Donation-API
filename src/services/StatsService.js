@@ -364,7 +364,18 @@ class StatsService {
   }
 
   /**
-   * Task: Implement donation analytics aggregation service
+   * Get orphaned transaction stats from the database
+   * @returns {Promise<{count: number, totalAmount: number}>}
+   */
+  static async getOrphanStats() {
+    const Database = require('../utils/database');
+    const rows = await Database.query(
+      'SELECT COUNT(*) as count, COALESCE(SUM(amount), 0) as totalAmount FROM transactions WHERE is_orphan = 1',
+      []
+    );
+    const row = rows[0] || { count: 0, totalAmount: 0 };
+    return { count: row.count, totalAmount: row.totalAmount };
+  }
    * Fetches live data from Stellar and persists it for performance.
    * 
    * TODO: Uncomment and implement when needed

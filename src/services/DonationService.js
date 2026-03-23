@@ -128,10 +128,10 @@ class DonationService {
       ledger: stellarResult.ledger
     });
 
-    // Record in database
+    // Record in database — store stellar_tx_id for cross-referencing
     const dbResult = await Database.run(
-      'INSERT INTO transactions (senderId, receiverId, amount, memo, timestamp, idempotencyKey) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, ?)',
-      [senderId, receiverId, amount, memo, idempotencyKey]
+      'INSERT INTO transactions (senderId, receiverId, amount, memo, timestamp, idempotencyKey, stellar_tx_id) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, ?, ?)',
+      [senderId, receiverId, amount, memo, idempotencyKey, stellarResult.transactionId]
     );
 
     // Record in JSON with state transitions
