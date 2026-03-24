@@ -19,6 +19,7 @@ const streamRoutes = require('./stream');
 const transactionRoutes = require('./transaction');
 const apiKeysRoutes = require('./apiKeys');
 const feesRoutes = require('./fees');
+const featureFlagsAdminRoutes = require('./admin/featureFlags');
 const { errorHandler, notFoundHandler } = require('../middleware/errorHandler');
 const logger = require('../middleware/logger');
 const { attachUserRole } = require('../middleware/rbac');
@@ -88,6 +89,7 @@ app.use('/stream', streamRoutes);
 app.use('/transactions', transactionRoutes);
 app.use('/api-keys', apiKeysRoutes);
 app.use('/fees', feesRoutes);
+app.use('/admin/feature-flags', featureFlagsAdminRoutes);
 
 // Exchange rates endpoint
 app.get('/exchange-rates', async (req, res) => {
@@ -331,6 +333,14 @@ async function startServer() {
     await logStartupDiagnostics();
     await Database.initialize();
     await initializeApiKeysTable();
+    
+    // Initialize feature flags table
+    const { initializeFeatureFlagsTable, loadFlagsFromEnv } = require('../utils/featureFlags');
+    await initializeFeatureFlagsTable();
+    if (process.env.FEATURE_FLAGS) {
+      await loadFlagsFromEnv(process.env.FEATURE_FLAGS);
+    }
+    
     await validateRBAC();
 
     const server = app.listen(PORT, () => {
