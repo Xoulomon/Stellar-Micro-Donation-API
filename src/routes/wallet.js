@@ -86,18 +86,6 @@ const walletPublicKeySchema = validateSchema({
  * POST /wallets
  * Create a new wallet with metadata. Auto-funds via Friendbot on testnet.
  */
-router.post('/', checkPermission(PERMISSIONS.WALLETS_CREATE), walletCreateSchema, (req, res, next) => {
-  try {
-    const { address, label, ownerName } = req.body;
-
-    if (!address) {
-      return res.status(400).json({
-        error: 'Missing required field: address'
-      });
-    }
-
-    // Use WalletService which applies comprehensive sanitization
-    const wallet = walletService.createWallet({ address, label, ownerName });
 router.post('/', checkPermission(PERMISSIONS.WALLETS_CREATE), walletCreateSchema, async (req, res) => {
   try {
     const { address, label, ownerName } = req.body;
@@ -174,20 +162,13 @@ router.get('/:id/balance', checkPermission(PERMISSIONS.WALLETS_READ), walletIdSc
  * GET /wallets/:id
  * Get a specific wallet
  */
-router.get('/:id', checkPermission(PERMISSIONS.WALLETS_READ), walletIdSchema, (req, res, next) => {
+router.get('/:id', checkPermission(PERMISSIONS.WALLETS_READ), walletIdSchema, async (req, res, next) => {
   try {
-    const wallet = Wallet.getById(req.params.id);
-
+    const wallet = await walletService.getWalletById(req.params.id);
     if (!wallet) {
-      return res.status(404).json({
-        error: 'Wallet not found'
-      });
+      return res.status(404).json({ success: false, error: 'Wallet not found' });
     }
-
-    res.json({
-      success: true,
-      data: wallet
-    });
+    res.json({ success: true, data: wallet });
   } catch (error) {
     next(error);
   }
@@ -197,8 +178,7 @@ router.get('/:id', checkPermission(PERMISSIONS.WALLETS_READ), walletIdSchema, (r
  * PATCH /wallets/:id
  * Update wallet metadata
  */
-router.patch('/:id', checkPermission(PERMISSIONS.WALLETS_UPDATE), walletUpdateSchema, (req, res, next) => {
-router.patch('/:id', checkPermission(PERMISSIONS.WALLETS_UPDATE), walletUpdateSchema, async (req, res) => {
+router.patch('/:id', checkPermission(PERMISSIONS.WALLETS_UPDATE), walletUpdateSchema, async (req, res, next) => {
   try {
     const { label, ownerName } = req.body;
 
@@ -208,8 +188,7 @@ router.patch('/:id', checkPermission(PERMISSIONS.WALLETS_UPDATE), walletUpdateSc
       });
     }
 
-    // Use WalletService which applies comprehensive sanitization
-    const wallet = walletService.updateWallet(req.params.id, { label, ownerName });
+    const wallet = await walletService.updateWallet(req.params.id, { label, ownerName });
 
     await AuditLogService.log({
       category: AuditLogService.CATEGORY.WALLET_OPERATION,
@@ -220,13 +199,10 @@ router.patch('/:id', checkPermission(PERMISSIONS.WALLETS_UPDATE), walletUpdateSc
       requestId: req.id,
       ipAddress: req.ip,
       resource: `/wallets/${req.params.id}`,
-      details: { walletId: req.params.id, updates }
+      details: { walletId: req.params.id, updates: { label, ownerName } }
     });
 
-    res.json({
-      success: true,
-      data: wallet
-    });
+    res.json({ success: true, data: wallet });
   } catch (error) {
     next(error);
   }
