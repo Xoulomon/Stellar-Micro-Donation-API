@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "test": "jest",
     "test:coverage": "jest --coverage",
-    "test:coverage:ci": "jest --coverage --ci --maxWorkers=2"
+    "test:coverage:ci": "jest --coverage --ci --maxWorkers=2",
+    "test:load": "node tests/load/run-load-tests.js"
   },
   "dependencies": {
     "dotenv": "^16.0.3",
